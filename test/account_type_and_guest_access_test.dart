@@ -25,6 +25,9 @@ class FakeProfileNotifier extends StateNotifier<ProfileNotifierState>
   Future<bool> updateProfessionalProfile(ProfessionalProfileModel proProfile) async => true;
 
   @override
+  Future<bool> submitProfessionalProfileForApproval(ProfessionalProfileModel proProfile) async => true;
+
+  @override
   Future<bool> addPortfolioItem({
     required String professionalProfileId,
     required String title,

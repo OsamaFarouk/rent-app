@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -17,10 +18,7 @@ import '../providers/business_providers.dart';
 class RentalHouseDetailPage extends ConsumerWidget {
   final String businessProfileId;
 
-  const RentalHouseDetailPage({
-    super.key,
-    required this.businessProfileId,
-  });
+  const RentalHouseDetailPage({super.key, required this.businessProfileId});
 
   Future<void> _makeCall(String phone) async {
     final cleaned = phone.replaceAll(RegExp(r'[^0-9+]'), '');
@@ -48,9 +46,13 @@ class RentalHouseDetailPage extends ConsumerWidget {
     }
   }
 
-  Future<void> _shareRentalHouse(BuildContext context, BusinessProfileModel business) async {
+  Future<void> _shareRentalHouse(
+    BuildContext context,
+    BusinessProfileModel business,
+  ) async {
     try {
-      final text = '${business.businessName}\n${business.city} - Rental House on Rent App';
+      final text =
+          '${business.businessName}\n${business.city} - Rental House on Rent App';
       final box = context.findRenderObject() as RenderBox?;
       final sharePositionOrigin = box != null && box.hasSize
           ? box.localToGlobal(Offset.zero) & box.size
@@ -69,7 +71,9 @@ class RentalHouseDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final businessProfileAsync = ref.watch(businessProfileDetailProvider(businessProfileId));
+    final businessProfileAsync = ref.watch(
+      businessProfileDetailProvider(businessProfileId),
+    );
     final isFavorite = ref.watch(isBusinessFavoriteProvider(businessProfileId));
 
     return Scaffold(
@@ -84,7 +88,9 @@ class RentalHouseDetailPage extends ConsumerWidget {
         actions: [
           IconButton(
             icon: Icon(
-              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              isFavorite
+                  ? Icons.favorite_rounded
+                  : Icons.favorite_border_rounded,
               color: isFavorite ? AppColors.error : AppColors.textPrimary,
             ),
             onPressed: () async {
@@ -104,9 +110,14 @@ class RentalHouseDetailPage extends ConsumerWidget {
 
               try {
                 await ref
-                    .read(userFavoritesTargetNotifierProvider(
-                      UserFavoritesTargetKey(userId: user.id, targetType: 'business'),
-                    ).notifier)
+                    .read(
+                      userFavoritesTargetNotifierProvider(
+                        UserFavoritesTargetKey(
+                          userId: user.id,
+                          targetType: 'business',
+                        ),
+                      ).notifier,
+                    )
                     .toggleFavorite(
                       userId: user.id,
                       targetId: businessProfileId,
@@ -115,7 +126,9 @@ class RentalHouseDetailPage extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Failed to update favorites: ${e.toString()}'),
+                      content: Text(
+                        'Failed to update favorites: ${e.toString()}',
+                      ),
                       backgroundColor: AppColors.error,
                     ),
                   );
@@ -124,7 +137,10 @@ class RentalHouseDetailPage extends ConsumerWidget {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.share_outlined, color: AppColors.textPrimary),
+            icon: const Icon(
+              Icons.share_outlined,
+              color: AppColors.textPrimary,
+            ),
             onPressed: () {
               final biz = businessProfileAsync.asData?.value;
               if (biz != null) _shareRentalHouse(context, biz);
@@ -144,16 +160,16 @@ class RentalHouseDetailPage extends ConsumerWidget {
         ),
         data: (business) {
           if (business == null) {
-            return const Center(
-              child: Text('Rental House profile not found.'),
-            );
+            return const Center(child: Text('Rental House profile not found.'));
           }
 
           final phone = business.phone ?? '';
           final whatsapp = business.whatsapp ?? '';
           final hasPhone = phone.isNotEmpty;
           final hasWhatsapp = whatsapp.isNotEmpty;
-          final equipmentAsync = ref.watch(businessOwnerEquipmentProvider(business.userId));
+          final equipmentAsync = ref.watch(
+            businessOwnerEquipmentProvider(business.userId),
+          );
 
           return SafeArea(
             child: Column(
@@ -164,6 +180,25 @@ class RentalHouseDetailPage extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (business.coverImageUrl?.isNotEmpty ?? false) ...[
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: Image.network(
+                                business.coverImageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const ColoredBox(
+                                  color: AppColors.surface,
+                                  child: Center(
+                                    child: Icon(Icons.broken_image_outlined),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                        ],
                         // Business Header Card
                         Container(
                           width: double.infinity,
@@ -185,21 +220,26 @@ class RentalHouseDetailPage extends ConsumerWidget {
                                     decoration: BoxDecoration(
                                       color: AppColors.surfaceElevated,
                                       borderRadius: BorderRadius.circular(14.0),
-                                      border: Border.all(color: AppColors.border),
+                                      border: Border.all(
+                                        color: AppColors.border,
+                                      ),
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(14.0),
-                                      child: (business.logoUrl != null && business.logoUrl!.isNotEmpty)
+                                      child:
+                                          (business.logoUrl != null &&
+                                              business.logoUrl!.isNotEmpty)
                                           ? Image.network(
                                               business.logoUrl!,
                                               fit: BoxFit.cover,
-                                              errorBuilder: (ctx, err, stack) => const Center(
-                                                child: Icon(
-                                                  Icons.storefront_outlined,
-                                                  color: AppColors.primary,
-                                                  size: 32.0,
-                                                ),
-                                              ),
+                                              errorBuilder: (ctx, err, stack) =>
+                                                  const Center(
+                                                    child: Icon(
+                                                      Icons.storefront_outlined,
+                                                      color: AppColors.primary,
+                                                      size: 32.0,
+                                                    ),
+                                                  ),
                                             )
                                           : const Center(
                                               child: Icon(
@@ -213,7 +253,8 @@ class RentalHouseDetailPage extends ConsumerWidget {
                                   const SizedBox(width: AppSpacing.md),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
@@ -222,10 +263,12 @@ class RentalHouseDetailPage extends ConsumerWidget {
                                                 business.businessName,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: AppTypography.heading.copyWith(
-                                                  fontSize: 19.0,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
+                                                style: AppTypography.heading
+                                                    .copyWith(
+                                                      fontSize: 19.0,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
                                               ),
                                             ),
                                             const SizedBox(width: 4.0),
@@ -259,10 +302,12 @@ class RentalHouseDetailPage extends ConsumerWidget {
                                                 '${business.city}${business.area != null && business.area!.isNotEmpty ? ', ${business.area}' : ''}',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: AppTypography.caption.copyWith(
-                                                  color: AppColors.textMuted,
-                                                  fontSize: 12.0,
-                                                ),
+                                                style: AppTypography.caption
+                                                    .copyWith(
+                                                      color:
+                                                          AppColors.textMuted,
+                                                      fontSize: 12.0,
+                                                    ),
                                               ),
                                             ),
                                           ],
@@ -301,23 +346,32 @@ class RentalHouseDetailPage extends ConsumerWidget {
                           ),
                           child: Column(
                             children: [
-                              if (business.businessAddress != null && business.businessAddress!.isNotEmpty) ...[
+                              if (business.businessAddress != null &&
+                                  business.businessAddress!.isNotEmpty) ...[
                                 _buildDetailRow(
                                   icon: Icons.location_city_outlined,
                                   label: l10n.fullAddressLabel,
                                   value: business.businessAddress!,
                                 ),
-                                const Divider(color: AppColors.border, height: AppSpacing.md),
+                                const Divider(
+                                  color: AppColors.border,
+                                  height: AppSpacing.md,
+                                ),
                               ],
-                              if (business.workingHours != null && business.workingHours!.isNotEmpty) ...[
+                              if (business.workingHours != null &&
+                                  business.workingHours!.isNotEmpty) ...[
                                 _buildDetailRow(
                                   icon: Icons.access_time_rounded,
                                   label: l10n.workingHoursLabel,
                                   value: business.workingHours!,
                                 ),
-                                const Divider(color: AppColors.border, height: AppSpacing.md),
+                                const Divider(
+                                  color: AppColors.border,
+                                  height: AppSpacing.md,
+                                ),
                               ],
-                              if (business.websiteUrl != null && business.websiteUrl!.isNotEmpty) ...[
+                              if (business.websiteUrl != null &&
+                                  business.websiteUrl!.isNotEmpty) ...[
                                 _buildDetailRow(
                                   icon: Icons.language_outlined,
                                   label: l10n.websiteUrlLabel,
@@ -339,11 +393,15 @@ class RentalHouseDetailPage extends ConsumerWidget {
 
                         equipmentAsync.when(
                           loading: () => const Center(
-                            child: CircularProgressIndicator(color: AppColors.primary),
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
+                            ),
                           ),
                           error: (err, stack) => Text(
                             l10n.networkError,
-                            style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textMuted,
+                            ),
                           ),
                           data: (items) {
                             if (items.isEmpty) {
@@ -370,19 +428,30 @@ class RentalHouseDetailPage extends ConsumerWidget {
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: items.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: AppSpacing.sm),
                               itemBuilder: (context, index) {
                                 final item = items[index];
-                                final priceText = l10n.fromPrice(item.dailyPrice.toStringAsFixed(0)) + l10n.perDay;
+                                final priceText =
+                                    l10n.fromPrice(
+                                      item.dailyPrice.toStringAsFixed(0),
+                                    ) +
+                                    l10n.perDay;
 
-                                return EquipmentCard(
-                                  imagePath: item.primaryImageUrl ?? 'assets/images/sony_fx3.jpg',
-                                  title: item.name,
-                                  price: priceText,
-                                  location: item.formattedLocation,
-                                  rating: '5.0',
-                                  reviewsCount: '',
-                                  onTap: () => context.push('/equipment/${item.id}'),
+                                return SizedBox(
+                                  height: 200,
+                                  child: EquipmentCard(
+                                    imagePath:
+                                        item.primaryImageUrl ??
+                                        'assets/images/sony_fx3.jpg',
+                                    title: item.name,
+                                    price: priceText,
+                                    location: item.formattedLocation,
+                                    rating: '5.0',
+                                    reviewsCount: '',
+                                    onTap: () =>
+                                        context.push('/equipment/${item.id}'),
+                                  ),
                                 );
                               },
                             );
@@ -409,11 +478,16 @@ class RentalHouseDetailPage extends ConsumerWidget {
                               height: 46.0,
                               child: OutlinedButton.icon(
                                 onPressed: () => _makeCall(phone),
-                                icon: const Icon(Icons.phone_outlined, size: 18.0),
+                                icon: const Icon(
+                                  Icons.phone_outlined,
+                                  size: 18.0,
+                                ),
                                 label: const Text('Call Office'),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.textPrimary,
-                                  side: const BorderSide(color: AppColors.border),
+                                  side: const BorderSide(
+                                    color: AppColors.border,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12.0),
                                   ),
@@ -428,8 +502,12 @@ class RentalHouseDetailPage extends ConsumerWidget {
                             child: SizedBox(
                               height: 46.0,
                               child: ElevatedButton.icon(
-                                onPressed: () => _openWhatsApp(whatsapp, context),
-                                icon: const Icon(Icons.chat_outlined, size: 18.0),
+                                onPressed: () =>
+                                    _openWhatsApp(whatsapp, context),
+                                icon: const Icon(
+                                  Icons.chat_outlined,
+                                  size: 18.0,
+                                ),
                                 label: const Text('WhatsApp'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,

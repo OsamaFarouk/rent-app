@@ -267,7 +267,7 @@ class ProfileRepository {
             id: '',
             profileId: userId,
             professionalTitle: 'Professional',
-            approvalStatus: 'approved',
+            approvalStatus: 'draft',
           ),
         );
       }
@@ -321,16 +321,30 @@ class ProfileRepository {
   }
 
   /// Fetches public approved professional profiles from public.profiles table.
+  /// Only profiles with professional_profiles.approval_status == 'approved' are returned.
   Future<List<ProfileModel>> getPublicApprovedProfessionals({
     String? city,
     String? category,
     String? searchQuery,
   }) async {
     try {
+      final approvedProRecords = await _client
+          .from('professional_profiles')
+          .select('profile_id')
+          .eq('approval_status', 'approved');
+
+      final approvedProfileIds = (approvedProRecords as List)
+          .map((r) => r['profile_id'] as String)
+          .toSet();
+
+      if (approvedProfileIds.isEmpty) {
+        return [];
+      }
+
       var query = _client
           .from('profiles')
           .select()
-          .or('account_type.eq.professional,profile_type.eq.professional')
+          .inFilter('id', approvedProfileIds.toList())
           .eq('is_active', true);
 
       if (city != null && city.trim().isNotEmpty && city != 'All' && city != 'All Locations' && city != 'جميع المدن') {

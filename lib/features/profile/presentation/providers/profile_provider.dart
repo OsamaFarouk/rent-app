@@ -4,6 +4,7 @@ import '../../../equipment/presentation/providers/equipment_providers.dart';
 import '../../data/profile_repository.dart';
 import '../../domain/business_profile_model.dart';
 import '../../domain/portfolio_item_model.dart';
+import '../../domain/professional_completion_status.dart';
 import '../../domain/professional_profile_model.dart';
 import '../../domain/profile_model.dart';
 
@@ -33,6 +34,15 @@ final currentProfessionalProfileProvider = FutureProvider<ProfessionalProfileMod
 
   final repository = ref.watch(profileRepositoryProvider);
   return await repository.getProfessionalProfile(user.id);
+});
+
+final professionalCompletionStatusProvider = Provider<ProfessionalCompletionStatus>((ref) {
+  final profile = ref.watch(currentProfileProvider).asData?.value;
+  final proProfile = ref.watch(currentProfessionalProfileProvider).asData?.value;
+  return ProfessionalCompletionStatus.calculate(
+    profile: profile,
+    proProfile: proProfile,
+  );
 });
 
 class ProfileNotifierState {
@@ -97,6 +107,28 @@ class ProfileNotifier extends StateNotifier<ProfileNotifierState> {
       state = state.copyWith(
         isLoading: false,
         successMessage: 'profileUpdatedSuccess',
+      );
+      _ref.invalidate(currentProfessionalProfileProvider);
+      _ref.invalidate(publicApprovedProfessionalsProvider);
+      await _ref.read(currentProfessionalProfileProvider.future);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'networkError',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> submitProfessionalProfileForApproval(ProfessionalProfileModel proProfile) async {
+    state = state.copyWith(isLoading: true, errorMessage: null, successMessage: null);
+    try {
+      final updated = proProfile.copyWith(approvalStatus: 'pending');
+      await _repository.upsertProfessionalProfile(updated);
+      state = state.copyWith(
+        isLoading: false,
+        successMessage: 'profileSubmittedSuccess',
       );
       _ref.invalidate(currentProfessionalProfileProvider);
       _ref.invalidate(publicApprovedProfessionalsProvider);
@@ -283,3 +315,4 @@ final professionalProfileByIdProvider =
   final repository = ref.watch(profileRepositoryProvider);
   return await repository.getProfessionalProfile(id);
 });
+

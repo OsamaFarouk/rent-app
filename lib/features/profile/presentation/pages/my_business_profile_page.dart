@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/egypt_locations.dart';
 import '../../../../core/services/storage_service.dart';
@@ -18,15 +19,18 @@ class MyBusinessProfilePage extends ConsumerStatefulWidget {
   const MyBusinessProfilePage({super.key});
 
   @override
-  ConsumerState<MyBusinessProfilePage> createState() => _MyBusinessProfilePageState();
+  ConsumerState<MyBusinessProfilePage> createState() =>
+      _MyBusinessProfilePageState();
 }
 
 class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _businessNameController = TextEditingController();
-  final TextEditingController _businessAddressController = TextEditingController();
-  final TextEditingController _businessDescriptionController = TextEditingController();
+  final TextEditingController _businessAddressController =
+      TextEditingController();
+  final TextEditingController _businessDescriptionController =
+      TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _whatsappController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -34,9 +38,12 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
   final TextEditingController _workingHoursController = TextEditingController();
 
   EgyptGovernorate _selectedGovernorate = EgyptLocations.governorates.first;
-  EgyptDistrict _selectedDistrict = EgyptLocations.governorates.first.districts.first;
+  EgyptDistrict _selectedDistrict =
+      EgyptLocations.governorates.first.districts.first;
 
   String? _logoUrl;
+  String? _coverImageUrl;
+  bool _isUploadingCover = false;
   bool _isUploadingLogo = false;
   bool _initialized = false;
 
@@ -58,7 +65,15 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
     super.dispose();
   }
 
-  void _prefillData(BusinessProfileModel? business, String userId, String userPhone, String userWhatsapp, String userEmail, String userCity, String userArea) {
+  void _prefillData(
+    BusinessProfileModel? business,
+    String userId,
+    String userPhone,
+    String userWhatsapp,
+    String userEmail,
+    String userCity,
+    String userArea,
+  ) {
     if (!_initialized) {
       _businessNameController.text = business?.businessName ?? '';
       _businessAddressController.text = business?.businessAddress ?? '';
@@ -67,19 +82,126 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
       _whatsappController.text = business?.whatsapp ?? userWhatsapp;
       _emailController.text = business?.email ?? userEmail;
       _websiteUrlController.text = business?.websiteUrl ?? '';
-      _workingHoursController.text = (business?.workingHours != null && business!.workingHours!.isNotEmpty)
+      _workingHoursController.text =
+          (business?.workingHours != null && business!.workingHours!.isNotEmpty)
           ? business.workingHours!
           : 'Sun – Thu, 10:00 AM – 8:00 PM';
       _logoUrl = business?.logoUrl;
+      _coverImageUrl = business?.coverImageUrl;
 
-      final cityToMatch = (business?.city != null && business!.city.isNotEmpty) ? business.city : userCity;
-      final areaToMatch = (business?.area != null && business!.area!.isNotEmpty) ? business.area! : userArea;
+      final cityToMatch = (business?.city != null && business!.city.isNotEmpty)
+          ? business.city
+          : userCity;
+      final areaToMatch = (business?.area != null && business!.area!.isNotEmpty)
+          ? business.area!
+          : userArea;
 
       _selectedGovernorate = EgyptLocations.findGovernorate(cityToMatch);
-      _selectedDistrict = EgyptLocations.findDistrict(_selectedGovernorate, areaToMatch);
+      _selectedDistrict = EgyptLocations.findDistrict(
+        _selectedGovernorate,
+        areaToMatch,
+      );
 
       _initialized = true;
     }
+  }
+
+  Future<void> _pickCover(String userId) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      if (file == null || !mounted) return;
+      setState(() => _isUploadingCover = true);
+      final url = await StorageService().uploadBusinessCover(
+        userId: userId,
+        file: file,
+      );
+      if (mounted) setState(() => _coverImageUrl = url);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.networkError),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingCover = false);
+    }
+  }
+
+  Widget _buildCoverEditor(String userId, bool isSaving) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final hasCover = _coverImageUrl?.isNotEmpty ?? false;
+    final busy = _isUploadingCover || isSaving;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          isArabic ? 'صورة الغلاف' : 'Cover image',
+          style: AppTypography.title,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: ColoredBox(
+              color: AppColors.surface,
+              child: _isUploadingCover
+                  ? const Center(child: CircularProgressIndicator())
+                  : hasCover
+                  ? Image.network(
+                      _coverImageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.broken_image_outlined, size: 48),
+                    )
+                  : const Center(
+                      child: Icon(
+                        Icons.panorama_outlined,
+                        size: 48,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          isArabic ? 'اختر صورة أفقية لمكتب التأجير، ثم احفظ التغييرات.' : 'Choose a landscape photo of your rental house, then save your changes.',
+          style: AppTypography.caption,
+        ),
+        Wrap(
+          spacing: AppSpacing.sm,
+          children: [
+            TextButton.icon(
+              onPressed: busy ? null : () => _pickCover(userId),
+              icon: const Icon(Icons.add_photo_alternate_outlined),
+              label: Text(
+                isArabic
+                    ? (hasCover ? 'تغيير الغلاف' : 'إضافة غلاف')
+                    : (hasCover ? 'Replace cover' : 'Add cover'),
+              ),
+            ),
+            if (hasCover)
+              TextButton.icon(
+                onPressed: busy
+                    ? null
+                    : () => setState(() => _coverImageUrl = null),
+                icon: const Icon(Icons.delete_outline),
+                label: Text(isArabic ? 'إزالة الغلاف' : 'Remove cover'),
+              ),
+          ],
+        ),
+      ],
+    );
   }
 
   void _updateWorkingHoursString() {
@@ -193,16 +315,28 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 ListTile(
-                  leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primary),
-                  title: Text(l10n.takePhoto, style: AppTypography.title.copyWith(fontSize: 14.0)),
+                  leading: const Icon(
+                    Icons.camera_alt_outlined,
+                    color: AppColors.primary,
+                  ),
+                  title: Text(
+                    l10n.takePhoto,
+                    style: AppTypography.title.copyWith(fontSize: 14.0),
+                  ),
                   onTap: () {
                     Navigator.pop(ctx);
                     _pickAndUploadLogo(ImageSource.camera, userId);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
-                  title: Text(l10n.chooseFromGallery, style: AppTypography.title.copyWith(fontSize: 14.0)),
+                  leading: const Icon(
+                    Icons.photo_library_outlined,
+                    color: AppColors.primary,
+                  ),
+                  title: Text(
+                    l10n.chooseFromGallery,
+                    style: AppTypography.title.copyWith(fontSize: 14.0),
+                  ),
                   onTap: () {
                     Navigator.pop(ctx);
                     _pickAndUploadLogo(ImageSource.gallery, userId);
@@ -210,8 +344,17 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                 ),
                 if (_logoUrl != null && _logoUrl!.isNotEmpty)
                   ListTile(
-                    leading: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
-                    title: Text(l10n.removePhoto, style: AppTypography.title.copyWith(fontSize: 14.0, color: AppColors.error)),
+                    leading: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppColors.error,
+                    ),
+                    title: Text(
+                      l10n.removePhoto,
+                      style: AppTypography.title.copyWith(
+                        fontSize: 14.0,
+                        color: AppColors.error,
+                      ),
+                    ),
                     onTap: () {
                       Navigator.pop(ctx);
                       setState(() {
@@ -227,7 +370,10 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
     );
   }
 
-  Future<void> _handleSave(String userId, BusinessProfileModel? existing) async {
+  Future<void> _handleSave(
+    String userId,
+    BusinessProfileModel? existing,
+  ) async {
     if (!_formKey.currentState!.validate()) return;
 
     final updated = BusinessProfileModel(
@@ -241,9 +387,16 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
           ? _businessDescriptionController.text.trim()
           : null,
       logoUrl: _logoUrl,
-      phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-      whatsapp: _whatsappController.text.trim().isNotEmpty ? _whatsappController.text.trim() : null,
-      email: _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null,
+      coverImageUrl: _coverImageUrl,
+      phone: _phoneController.text.trim().isNotEmpty
+          ? _phoneController.text.trim()
+          : null,
+      whatsapp: _whatsappController.text.trim().isNotEmpty
+          ? _whatsappController.text.trim()
+          : null,
+      email: _emailController.text.trim().isNotEmpty
+          ? _emailController.text.trim()
+          : null,
       city: _selectedGovernorate.nameEn,
       area: _selectedDistrict.nameEn,
       websiteUrl: _websiteUrlController.text.trim().isNotEmpty
@@ -290,9 +443,7 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary),
           ),
-          error: (err, stack) => Center(
-            child: Text(l10n.networkError),
-          ),
+          error: (err, stack) => Center(child: Text(l10n.networkError)),
           data: (profile) {
             // Security Access Guard: Strictly block non-business accounts
             if (profile == null || !profile.isBusiness) {
@@ -306,9 +457,7 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
               loading: () => const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
-              error: (err, stack) => Center(
-                child: Text(l10n.networkError),
-              ),
+              error: (err, stack) => Center(child: Text(l10n.networkError)),
               data: (businessProfile) {
                 _prefillData(
                   businessProfile,
@@ -332,6 +481,9 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                         const SizedBox(height: AppSpacing.sm),
 
                         // Approval & Status Banner
+                        _buildCoverEditor(profile.id, businessState.isLoading),
+                        const SizedBox(height: AppSpacing.lg),
+
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(AppSpacing.md),
@@ -343,7 +495,9 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(AppSpacing.xs + 2),
+                                padding: const EdgeInsets.all(
+                                  AppSpacing.xs + 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.primarySoft,
                                   borderRadius: BorderRadius.circular(12.0),
@@ -385,18 +539,28 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                                   vertical: AppSpacing.xxs + 1,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: (isApproved ? AppColors.success : AppColors.warning)
-                                      .withValues(alpha: 0.15),
+                                  color:
+                                      (isApproved
+                                              ? AppColors.success
+                                              : AppColors.warning)
+                                          .withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(20.0),
                                   border: Border.all(
-                                    color: (isApproved ? AppColors.success : AppColors.warning)
-                                        .withValues(alpha: 0.4),
+                                    color:
+                                        (isApproved
+                                                ? AppColors.success
+                                                : AppColors.warning)
+                                            .withValues(alpha: 0.4),
                                   ),
                                 ),
                                 child: Text(
-                                  isApproved ? l10n.approvedStatus : l10n.pendingApproval,
+                                  isApproved
+                                      ? l10n.approvedStatus
+                                      : l10n.pendingApproval,
                                   style: AppTypography.label.copyWith(
-                                    color: isApproved ? AppColors.success : AppColors.warning,
+                                    color: isApproved
+                                        ? AppColors.success
+                                        : AppColors.warning,
                                     fontSize: 11.0,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -413,7 +577,8 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                           child: Column(
                             children: [
                               GestureDetector(
-                                onTap: () => _showLogoPickerSheet(context, profile.id),
+                                onTap: () =>
+                                    _showLogoPickerSheet(context, profile.id),
                                 child: Stack(
                                   children: [
                                     Container(
@@ -422,7 +587,10 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                                       decoration: BoxDecoration(
                                         color: AppColors.surfaceElevated,
                                         shape: BoxShape.circle,
-                                        border: Border.all(color: AppColors.border, width: 2.0),
+                                        border: Border.all(
+                                          color: AppColors.border,
+                                          width: 2.0,
+                                        ),
                                       ),
                                       child: _isUploadingLogo
                                           ? const Center(
@@ -432,15 +600,24 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                                               ),
                                             )
                                           : ClipOval(
-                                              child: (_logoUrl != null && _logoUrl!.isNotEmpty)
+                                              child:
+                                                  (_logoUrl != null &&
+                                                      _logoUrl!.isNotEmpty)
                                                   ? Image.network(
                                                       _logoUrl!,
                                                       fit: BoxFit.cover,
-                                                      errorBuilder: (ctx, err, stack) => const Icon(
-                                                        Icons.business_outlined,
-                                                        color: AppColors.primary,
-                                                        size: 38.0,
-                                                      ),
+                                                      errorBuilder:
+                                                          (
+                                                            ctx,
+                                                            err,
+                                                            stack,
+                                                          ) => const Icon(
+                                                            Icons
+                                                                .business_outlined,
+                                                            color: AppColors
+                                                                .primary,
+                                                            size: 38.0,
+                                                          ),
                                                     )
                                                   : const Icon(
                                                       Icons.business_outlined,
@@ -453,7 +630,9 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                                       right: 0,
                                       bottom: 0,
                                       child: Container(
-                                        padding: const EdgeInsets.all(AppSpacing.xs),
+                                        padding: const EdgeInsets.all(
+                                          AppSpacing.xs,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: AppColors.primary,
                                           shape: BoxShape.circle,
@@ -497,7 +676,9 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                           style: AppTypography.title.copyWith(fontSize: 14.0),
                           decoration: InputDecoration(
                             hintText: 'e.g. Cairo Cine Equipment Rental',
-                            hintStyle: AppTypography.caption.copyWith(color: AppColors.textMuted),
+                            hintStyle: AppTypography.caption.copyWith(
+                              color: AppColors.textMuted,
+                            ),
                             prefixIcon: const Icon(
                               Icons.business_outlined,
                               color: AppColors.textSecondary,
@@ -508,7 +689,9 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                             contentPadding: const EdgeInsets.all(AppSpacing.md),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.0),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: const BorderSide(
+                                color: AppColors.border,
+                              ),
                             ),
                           ),
                           validator: (value) {
@@ -533,13 +716,17 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                           style: AppTypography.title.copyWith(fontSize: 14.0),
                           decoration: InputDecoration(
                             hintText: 'Brief summary of rental services & available gear...',
-                            hintStyle: AppTypography.caption.copyWith(color: AppColors.textMuted),
+                            hintStyle: AppTypography.caption.copyWith(
+                              color: AppColors.textMuted,
+                            ),
                             filled: true,
                             fillColor: AppColors.surface,
                             contentPadding: const EdgeInsets.all(AppSpacing.md),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.0),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: const BorderSide(
+                                color: AppColors.border,
+                              ),
                             ),
                           ),
                         ),
@@ -564,7 +751,9 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                             contentPadding: const EdgeInsets.all(AppSpacing.md),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.0),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: const BorderSide(
+                                color: AppColors.border,
+                              ),
                             ),
                           ),
                           items: EgyptLocations.governorates.map((gov) {
@@ -592,7 +781,9 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                         const SizedBox(height: AppSpacing.xs),
                         DropdownButtonFormField<EgyptDistrict>(
                           isExpanded: true,
-                          key: ValueKey('dist_${_selectedGovernorate.id}_${_selectedDistrict.id}'),
+                          key: ValueKey(
+                            'dist_${_selectedGovernorate.id}_${_selectedDistrict.id}',
+                          ),
                           initialValue: _selectedDistrict,
                           dropdownColor: AppColors.surface,
                           style: AppTypography.title.copyWith(fontSize: 14.0),
@@ -602,7 +793,9 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                             contentPadding: const EdgeInsets.all(AppSpacing.md),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.0),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: const BorderSide(
+                                color: AppColors.border,
+                              ),
                             ),
                           ),
                           items: _selectedGovernorate.districts.map((dist) {
@@ -633,13 +826,17 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                           style: AppTypography.title.copyWith(fontSize: 14.0),
                           decoration: InputDecoration(
                             hintText: 'e.g. Building 14, Road 9, Maadi',
-                            hintStyle: AppTypography.caption.copyWith(color: AppColors.textMuted),
+                            hintStyle: AppTypography.caption.copyWith(
+                              color: AppColors.textMuted,
+                            ),
                             filled: true,
                             fillColor: AppColors.surface,
                             contentPadding: const EdgeInsets.all(AppSpacing.md),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.0),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: const BorderSide(
+                                color: AppColors.border,
+                              ),
                             ),
                           ),
                         ),
@@ -658,13 +855,19 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                           style: AppTypography.title.copyWith(fontSize: 14.0),
                           decoration: InputDecoration(
                             hintText: '+20 100 000 0000',
-                            prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.textSecondary, size: 20.0),
+                            prefixIcon: const Icon(
+                              Icons.phone_outlined,
+                              color: AppColors.textSecondary,
+                              size: 20.0,
+                            ),
                             filled: true,
                             fillColor: AppColors.surface,
                             contentPadding: const EdgeInsets.all(AppSpacing.md),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.0),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: const BorderSide(
+                                color: AppColors.border,
+                              ),
                             ),
                           ),
                         ),
@@ -682,13 +885,19 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                           style: AppTypography.title.copyWith(fontSize: 14.0),
                           decoration: InputDecoration(
                             hintText: '+20 100 000 0000',
-                            prefixIcon: const Icon(Icons.chat_outlined, color: AppColors.textSecondary, size: 20.0),
+                            prefixIcon: const Icon(
+                              Icons.chat_outlined,
+                              color: AppColors.textSecondary,
+                              size: 20.0,
+                            ),
                             filled: true,
                             fillColor: AppColors.surface,
                             contentPadding: const EdgeInsets.all(AppSpacing.md),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.0),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: const BorderSide(
+                                color: AppColors.border,
+                              ),
                             ),
                           ),
                         ),
@@ -706,13 +915,17 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                           style: AppTypography.title.copyWith(fontSize: 14.0),
                           decoration: InputDecoration(
                             hintText: 'https://www.cairocine.com',
-                            hintStyle: AppTypography.caption.copyWith(color: AppColors.textMuted),
+                            hintStyle: AppTypography.caption.copyWith(
+                              color: AppColors.textMuted,
+                            ),
                             filled: true,
                             fillColor: AppColors.surface,
                             contentPadding: const EdgeInsets.all(AppSpacing.md),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.0),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: const BorderSide(
+                                color: AppColors.border,
+                              ),
                             ),
                           ),
                         ),
@@ -740,10 +953,14 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                                 key: ValueKey('days_$_selectedDayPreset'),
                                 initialValue: _selectedDayPreset,
                                 dropdownColor: AppColors.surface,
-                                style: AppTypography.title.copyWith(fontSize: 13.5),
+                                style: AppTypography.title.copyWith(
+                                  fontSize: 13.5,
+                                ),
                                 decoration: InputDecoration(
                                   labelText: l10n.workingDaysLabel,
-                                  labelStyle: AppTypography.caption.copyWith(color: AppColors.primary),
+                                  labelStyle: AppTypography.caption.copyWith(
+                                    color: AppColors.primary,
+                                  ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: AppSpacing.sm,
                                     vertical: AppSpacing.xs,
@@ -751,11 +968,26 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                                   border: const OutlineInputBorder(),
                                 ),
                                 items: const [
-                                  DropdownMenuItem(value: 'Sun – Thu', child: Text('Sun – Thu')),
-                                  DropdownMenuItem(value: 'Sun – Sat (Daily)', child: Text('Sun – Sat (Daily)')),
-                                  DropdownMenuItem(value: 'Sat – Thu', child: Text('Sat – Thu')),
-                                  DropdownMenuItem(value: 'Mon – Fri', child: Text('Mon – Fri')),
-                                  DropdownMenuItem(value: 'Closed', child: Text('Closed')),
+                                  DropdownMenuItem(
+                                    value: 'Sun – Thu',
+                                    child: Text('Sun – Thu'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Sun – Sat (Daily)',
+                                    child: Text('Sun – Sat (Daily)'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Sat – Thu',
+                                    child: Text('Sat – Thu'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Mon – Fri',
+                                    child: Text('Mon – Fri'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Closed',
+                                    child: Text('Closed'),
+                                  ),
                                 ],
                                 onChanged: (val) {
                                   if (val != null) {
@@ -773,11 +1005,19 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                                     Expanded(
                                       child: OutlinedButton.icon(
                                         onPressed: () => _pickTime(true),
-                                        icon: const Icon(Icons.access_time_rounded, size: 16.0),
-                                        label: Text('${l10n.openTimeLabel}: ${_openTime.format(context)}'),
+                                        icon: const Icon(
+                                          Icons.access_time_rounded,
+                                          size: 16.0,
+                                        ),
+                                        label: Text(
+                                          '${l10n.openTimeLabel}: ${_openTime.format(context)}',
+                                        ),
                                         style: OutlinedButton.styleFrom(
-                                          foregroundColor: AppColors.textPrimary,
-                                          side: const BorderSide(color: AppColors.border),
+                                          foregroundColor:
+                                              AppColors.textPrimary,
+                                          side: const BorderSide(
+                                            color: AppColors.border,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -785,11 +1025,19 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                                     Expanded(
                                       child: OutlinedButton.icon(
                                         onPressed: () => _pickTime(false),
-                                        icon: const Icon(Icons.access_time_filled_rounded, size: 16.0),
-                                        label: Text('${l10n.closeTimeLabel}: ${_closeTime.format(context)}'),
+                                        icon: const Icon(
+                                          Icons.access_time_filled_rounded,
+                                          size: 16.0,
+                                        ),
+                                        label: Text(
+                                          '${l10n.closeTimeLabel}: ${_closeTime.format(context)}',
+                                        ),
                                         style: OutlinedButton.styleFrom(
-                                          foregroundColor: AppColors.textPrimary,
-                                          side: const BorderSide(color: AppColors.border),
+                                          foregroundColor:
+                                              AppColors.textPrimary,
+                                          side: const BorderSide(
+                                            color: AppColors.border,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -813,7 +1061,9 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10.0),
-                              borderSide: const BorderSide(color: AppColors.border),
+                              borderSide: const BorderSide(
+                                color: AppColors.border,
+                              ),
                             ),
                           ),
                         ),
@@ -825,9 +1075,13 @@ class _MyBusinessProfilePageState extends ConsumerState<MyBusinessProfilePage> {
                           width: double.infinity,
                           height: 50.0,
                           child: ElevatedButton(
-                            onPressed: businessState.isLoading
+                            onPressed:
+                                businessState.isLoading ||
+                                    _isUploadingCover ||
+                                    _isUploadingLogo
                                 ? null
-                                : () => _handleSave(profile.id, businessProfile),
+                                : () =>
+                                      _handleSave(profile.id, businessProfile),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: AppColors.background,
@@ -873,10 +1127,7 @@ class _AccessDeniedView extends StatelessWidget {
   final AppLocalizations l10n;
   final String message;
 
-  const _AccessDeniedView({
-    required this.l10n,
-    required this.message,
-  });
+  const _AccessDeniedView({required this.l10n, required this.message});
 
   @override
   Widget build(BuildContext context) {

@@ -209,7 +209,9 @@ void main() {
         const SearchResultsPage(initialQuery: 'Camera'),
         overrides,
       ));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(Duration.zero);
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Verify search results page title and equipment card
       expect(find.text('Search Results'), findsOneWidget);
@@ -237,26 +239,28 @@ void main() {
         const SearchResultsPage(initialQuery: ''),
         overrides,
       ));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(Duration.zero);
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Verify category chips exist
       expect(find.byType(CategoryChip), findsNWidgets(4));
 
       // Tap Equipment filter chip (index 1)
       await tester.tap(find.byType(CategoryChip).at(1));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Sony FX3 Camera'), findsOneWidget);
 
       // Tap Professionals filter chip (index 2)
       await tester.tap(find.byType(CategoryChip).at(2));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Omar Editor'), findsOneWidget);
 
       // Tap Rental Houses filter chip (index 3)
       await tester.tap(find.byType(CategoryChip).at(3));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Cairo Cine Rentals'), findsOneWidget);
     });

@@ -650,6 +650,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 area: item.area,
                                 description: item.businessDescription,
                                 logoUrl: item.logoUrl,
+                      coverImageUrl: item.coverImageUrl,
                                 isVerified: true,
                                 isFavorite: isFav,
                                 onFavoriteTap: () async {
@@ -875,6 +876,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       area: item.area,
                       description: item.businessDescription,
                       logoUrl: item.logoUrl,
+                      coverImageUrl: item.coverImageUrl,
                       isVerified: true,
                       isFavorite: isFav,
                       onFavoriteTap: () async {

@@ -7,6 +7,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../domain/professional_completion_status.dart';
 import '../../domain/profile_model.dart';
 import '../providers/profile_provider.dart';
 
@@ -484,8 +485,13 @@ class _AuthenticatedProfileView extends ConsumerWidget {
                     ),
                   ),
 
-                  // Profile Completion Banner (Only when < 100%)
-                  if (completionScore < 100) ...[
+                  // Complete Your Profile Card for Professional Accounts (Matching Reference UI)
+                  if (isProfessional) ...[
+                    if (!ref.watch(professionalCompletionStatusProvider).isFullyCompleted) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      _buildCompleteYourProfileCard(context, ref.watch(professionalCompletionStatusProvider)),
+                    ],
+                  ] else if (completionScore < 100) ...[
                     const SizedBox(height: AppSpacing.md),
                     GestureDetector(
                       onTap: () => context.push('/edit-profile'),
@@ -737,6 +743,289 @@ class _AuthenticatedProfileView extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCompleteYourProfileCard(
+    BuildContext context,
+    ProfessionalCompletionStatus completion,
+  ) {
+    final missingSummary = completion.summaryMissingLabels;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: AppColors.primary, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Complete Your Profile',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.heading.copyWith(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                '${completion.percentage}%',
+                style: AppTypography.heading.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8.0),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4.0),
+            child: LinearProgressIndicator(
+              value: completion.percentage / 100.0,
+              minHeight: 4.0,
+              backgroundColor: AppColors.surfaceElevated,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            completion.isFullyCompleted
+                ? 'All mandatory information is filled! Ready to submit for review.'
+                : 'Complete required information to publish your professional profile.',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 11.5,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Divider(color: AppColors.border, height: 1.0),
+          const SizedBox(height: AppSpacing.md),
+
+          if (!completion.isFullyCompleted && missingSummary.isNotEmpty) ...[
+            Column(
+              children: missingSummary.map((item) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.body.copyWith(
+                            fontSize: 13.0,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6.0),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                        ),
+                        child: Text(
+                          'Required',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 10.0,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+
+          SizedBox(
+            width: double.infinity,
+            height: 44.0,
+            child: ElevatedButton(
+              onPressed: () => _showCompletionChecklistModal(context, completion),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.background,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                completion.isFullyCompleted ? 'Review & Submit →' : 'Continue Setup →',
+                style: AppTypography.button.copyWith(
+                  color: AppColors.background,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.0,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCompletionChecklistModal(
+    BuildContext context,
+    ProfessionalCompletionStatus completion,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.65,
+          maxChildSize: 0.85,
+          minChildSize: 0.4,
+          builder: (_, controller) {
+            return SingleChildScrollView(
+              controller: controller,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40.0,
+                      height: 4.0,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2.0),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Profile Setup Checklist',
+                        style: AppTypography.heading.copyWith(fontSize: 18.0),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySoft,
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        child: Text(
+                          '${completion.percentage}% Complete',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  const Divider(color: AppColors.border),
+                  const SizedBox(height: AppSpacing.md),
+
+                  Text(
+                    'Mandatory Fields Checklist',
+                    style: AppTypography.title.copyWith(fontSize: 14.0, color: AppColors.primary),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: completion.items.length,
+                    separatorBuilder: (_, __) => const Divider(color: AppColors.border, height: 1.0),
+                    itemBuilder: (context, idx) {
+                      final item = completion.items[idx];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          item.isCompleted ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                          color: item.isCompleted ? AppColors.success : AppColors.primary,
+                          size: 20.0,
+                        ),
+                        title: Text(
+                          item.label,
+                          style: AppTypography.body.copyWith(
+                            fontSize: 13.0,
+                            color: item.isCompleted ? AppColors.textPrimary : AppColors.textSecondary,
+                          ),
+                        ),
+                        subtitle: Text(
+                          item.category,
+                          style: AppTypography.caption.copyWith(fontSize: 10.5, color: AppColors.textMuted),
+                        ),
+                        trailing: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            context.push(item.route);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.border),
+                            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 0),
+                            minimumSize: const Size(0, 32.0),
+                          ),
+                          child: Text(
+                            item.isCompleted ? 'Edit' : 'Fill',
+                            style: AppTypography.caption.copyWith(fontSize: 11.0),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48.0,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        if (completion.missingItems.isNotEmpty) {
+                          context.push(completion.missingItems.first.route);
+                        } else {
+                          context.push('/my-professional-profile');
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.background,
+                      ),
+                      child: Text(
+                        completion.isFullyCompleted ? 'Go to Professional Profile' : 'Continue Setup',
+                        style: AppTypography.button.copyWith(fontWeight: FontWeight.w700, color: AppColors.background),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

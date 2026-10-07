@@ -74,6 +74,33 @@ class PortfolioItemModel {
     return description ?? '';
   }
 
+  String? get client {
+    final meta = _parsedMetadata;
+    if (meta.containsKey('client') && meta['client'] != null) {
+      final c = meta['client'].toString().trim();
+      return c.isNotEmpty ? c : null;
+    }
+    return null;
+  }
+
+  String? get tools {
+    final meta = _parsedMetadata;
+    if (meta.containsKey('tools') && meta['tools'] != null) {
+      final t = meta['tools'].toString().trim();
+      return t.isNotEmpty ? t : null;
+    }
+    return null;
+  }
+
+  String? get externalProjectLink {
+    final meta = _parsedMetadata;
+    if (meta.containsKey('external_project_link') && meta['external_project_link'] != null) {
+      final link = meta['external_project_link'].toString().trim();
+      return link.isNotEmpty ? link : null;
+    }
+    return null;
+  }
+
   List<String> get galleryImages {
     final meta = _parsedMetadata;
     if (meta.containsKey('gallery') && meta['gallery'] is List) {
@@ -87,6 +114,9 @@ class PortfolioItemModel {
     required String workType,
     String? userRole,
     String? year,
+    String? client,
+    String? tools,
+    String? externalProjectLink,
     List<String>? gallery,
   }) {
     final map = <String, dynamic>{
@@ -98,6 +128,15 @@ class PortfolioItemModel {
     }
     if (year != null && year.trim().isNotEmpty) {
       map['year'] = year.trim();
+    }
+    if (client != null && client.trim().isNotEmpty) {
+      map['client'] = client.trim();
+    }
+    if (tools != null && tools.trim().isNotEmpty) {
+      map['tools'] = tools.trim();
+    }
+    if (externalProjectLink != null && externalProjectLink.trim().isNotEmpty) {
+      map['external_project_link'] = externalProjectLink.trim();
     }
     if (gallery != null && gallery.isNotEmpty) {
       map['gallery'] = gallery;
