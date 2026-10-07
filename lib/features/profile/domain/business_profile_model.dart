@@ -6,6 +6,7 @@ class BusinessProfileModel {
   final String? businessAddress;
   final String? businessDescription;
   final String? logoUrl;
+  final String? coverImageUrl;
   final String? phone;
   final String? whatsapp;
   final String? email;
@@ -25,6 +26,7 @@ class BusinessProfileModel {
     this.businessAddress,
     this.businessDescription,
     this.logoUrl,
+    this.coverImageUrl,
     this.phone,
     this.whatsapp,
     this.email,
@@ -48,6 +50,7 @@ class BusinessProfileModel {
       businessAddress: json['business_address'] as String?,
       businessDescription: json['business_description'] as String?,
       logoUrl: json['logo_url'] as String?,
+      coverImageUrl: json['cover_image_url'] as String?,
       phone: json['phone'] as String?,
       whatsapp: json['whatsapp'] as String?,
       email: json['email'] as String?,
@@ -74,6 +77,7 @@ class BusinessProfileModel {
       'business_address': businessAddress,
       'business_description': businessDescription,
       'logo_url': logoUrl,
+      'cover_image_url': coverImageUrl,
       'phone': phone,
       'whatsapp': whatsapp,
       'email': email,

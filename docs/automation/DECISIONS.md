@@ -14,6 +14,7 @@ Recorded: 2026-10-07. Status distinguishes agreed direction from proposed techni
 | D008 | Proposed architecture | Modular n8n workflows with a Windows execution runner | Separate coordination from local tool execution |
 | D009 | Proposed release process | Feature branches and reviewed pull requests; code and docs merge together | Traceable changes and approvals |
 | D010 | Proposed pilot | One small feature before full design/release automation | Validate the core path incrementally |
+| D012 | Confirmed checkpoint | Osama confirmed the latest Windows project was pushed on 2026-10-07; baseline is d8fe904 | Replaces the initial September 16 source snapshot; automation remains paused |
 | D011 | Proposed reliability limit | Maximum three repair attempts, then founder escalation | Avoid endless loops and uncontrolled usage |
 
 ## Open choices
@@ -26,7 +27,7 @@ Recorded: 2026-10-07. Status distinguishes agreed direction from proposed techni
 - Required checks, severity threshold for blocking findings, and final retry/time limits.
 - Android test distribution, production deployment order, iOS runner and signing.
 - Monitoring/crash reporting integration and recovery procedure.
-- Whether a newer Windows source revision should replace the September 16 baseline.
+- Baseline is refreshed to d8fe904. Any future changes require a new source comparison before updating implementation claims.
 
 ## History rule
 

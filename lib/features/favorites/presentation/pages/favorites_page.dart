@@ -285,6 +285,7 @@ class _RentalHousesFavoritesTab extends ConsumerWidget {
                 area: business.area,
                 description: business.businessDescription,
                 logoUrl: business.logoUrl,
+                      coverImageUrl: business.coverImageUrl,
                 isVerified: business.isActive,
                 isFavorite: isFav,
                 onFavoriteTap: () async {

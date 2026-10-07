@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -55,16 +56,18 @@ class RentalHouseCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(13.0),
         child: (logoUrl != null && logoUrl!.isNotEmpty)
             ? (logoUrl!.startsWith('http://') || logoUrl!.startsWith('https://')
-                ? Image.network(
-                    logoUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, stack) => _buildFallbackLogo(size),
-                  )
-                : Image.asset(
-                    logoUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, stack) => _buildFallbackLogo(size),
-                  ))
+                  ? Image.network(
+                      logoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (ctx, err, stack) =>
+                          _buildFallbackLogo(size),
+                    )
+                  : Image.asset(
+                      logoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (ctx, err, stack) =>
+                          _buildFallbackLogo(size),
+                    ))
             : _buildFallbackLogo(size),
       ),
     );
@@ -118,7 +121,8 @@ class RentalHouseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final locationText = '$city${area != null && area!.isNotEmpty ? ', $area' : ''}';
+    final locationText =
+        '$city${area != null && area!.isNotEmpty ? ', $area' : ''}';
     final typeText = (businessType != null && businessType!.isNotEmpty)
         ? businessType!
         : 'Equipment Rental House';
@@ -131,7 +135,11 @@ class RentalHouseCard extends StatelessWidget {
   }
 
   /// Wide Business Storefront Card for Home page matching media_1789474443432.png
-  Widget _buildHomeVariant(BuildContext context, String locationText, String typeText) {
+  Widget _buildHomeVariant(
+    BuildContext context,
+    String locationText,
+    String typeText,
+  ) {
     final cardWidth = width ?? 340.0;
 
     return GestureDetector(
@@ -158,19 +166,22 @@ class RentalHouseCard extends StatelessWidget {
                   return const LinearGradient(
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
-                    colors: [
-                      Color(0xFF16161A),
-                      Colors.transparent,
-                    ],
+                    colors: [Color(0xFF16161A), Colors.transparent],
                     stops: [0.0, 0.45],
                   ).createShader(bounds);
                 },
                 blendMode: BlendMode.srcOver,
-                child: Image.asset(
-                  'assets/images/sony_fx3.jpg',
-                  fit: BoxFit.cover,
-                  errorBuilder: (ctx, err, stack) => const SizedBox.shrink(),
-                ),
+                child: (coverImageUrl?.isNotEmpty ?? false)
+                    ? Image.network(
+                        coverImageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      )
+                    : Image.asset(
+                        'assets/images/sony_fx3.jpg',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
               ),
             ),
 
@@ -217,7 +228,9 @@ class RentalHouseCard extends StatelessWidget {
 
                           // Business Type Subtitle
                           Text(
-                            typeText.isNotEmpty ? typeText : 'Equipment Rental House',
+                            typeText.isNotEmpty
+                                ? typeText
+                                : 'Equipment Rental House',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.caption.copyWith(
@@ -274,7 +287,9 @@ class RentalHouseCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFF24242A).withValues(alpha: 0.9),
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1),
+                  ),
                 ),
                 child: const Icon(
                   Icons.chevron_right_rounded,
@@ -290,7 +305,11 @@ class RentalHouseCard extends StatelessWidget {
   }
 
   /// Full-Width Corporate Rental House Profile Card matching right screen of media_1789478544101.jpg
-  Widget _buildPageVariant(BuildContext context, String locationText, String typeText) {
+  Widget _buildPageVariant(
+    BuildContext context,
+    String locationText,
+    String typeText,
+  ) {
     final chips = categoryChips ?? const ['Cameras', 'Lighting', 'Audio'];
     final inventoryCount = activeListingsCount ?? 24;
 
@@ -315,17 +334,20 @@ class RentalHouseCard extends StatelessWidget {
                 children: [
                   Positioned.fill(
                     child: (coverImageUrl != null && coverImageUrl!.isNotEmpty)
-                        ? (coverImageUrl!.startsWith('http://') || coverImageUrl!.startsWith('https://')
-                            ? Image.network(
-                                coverImageUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => _buildFallbackCover(),
-                              )
-                            : Image.asset(
-                                coverImageUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => _buildFallbackCover(),
-                              ))
+                        ? (coverImageUrl!.startsWith('http://') ||
+                                  coverImageUrl!.startsWith('https://')
+                              ? Image.network(
+                                  coverImageUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) =>
+                                      _buildFallbackCover(),
+                                )
+                              : Image.asset(
+                                  coverImageUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) =>
+                                      _buildFallbackCover(),
+                                ))
                         : _buildFallbackCover(),
                   ),
                   // Top Right Favorite Button
@@ -340,7 +362,10 @@ class RentalHouseCard extends StatelessWidget {
 
             // Info Block with Overlapping Logo
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm + 4, vertical: AppSpacing.sm),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm + 4,
+                vertical: AppSpacing.sm,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -412,7 +437,8 @@ class RentalHouseCard extends StatelessWidget {
                   ),
 
                   // Business Description (when available)
-                  if (description != null && description!.trim().isNotEmpty) ...[
+                  if (description != null &&
+                      description!.trim().isNotEmpty) ...[
                     Transform.translate(
                       offset: const Offset(0, -10.0),
                       child: Text(
@@ -528,10 +554,7 @@ class RentalHouseCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF222228),
-            Color(0xFF16161A),
-          ],
+          colors: [Color(0xFF222228), Color(0xFF16161A)],
         ),
       ),
       child: Center(

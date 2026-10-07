@@ -164,6 +164,7 @@ class _RentalHousesPageState extends ConsumerState<RentalHousesPage> {
                         area: item.area,
                         description: item.businessDescription,
                         logoUrl: item.logoUrl,
+                      coverImageUrl: item.coverImageUrl,
                         categoryChips: chips,
                         activeListingsCount: (24 - index * 6).clamp(12, 48),
                         isVerified: true,

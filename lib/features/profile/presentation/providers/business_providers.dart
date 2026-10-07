@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../equipment/domain/equipment_model.dart';
 import '../../data/business_repository.dart';
 import '../../domain/business_profile_model.dart';
@@ -10,31 +11,34 @@ final businessRepositoryProvider = Provider<BusinessRepository>((ref) {
 
 /// Riverpod provider delivering approved public rental houses (business profiles).
 final publicApprovedBusinessProfilesProvider =
-    FutureProvider.family<List<BusinessProfileModel>, String?>((ref, city) async {
-  final repository = ref.watch(businessRepositoryProvider);
-  return await repository.getApprovedBusinessProfiles(city: city);
-});
+    FutureProvider.family<List<BusinessProfileModel>, String?>((
+      ref,
+      city,
+    ) async {
+      final repository = ref.watch(businessRepositoryProvider);
+      return await repository.getApprovedBusinessProfiles(city: city);
+    });
 
 /// Riverpod provider delivering single business profile details by business profile ID.
 final businessProfileDetailProvider =
     FutureProvider.family<BusinessProfileModel?, String>((ref, id) async {
-  final repository = ref.watch(businessRepositoryProvider);
-  return await repository.getBusinessProfileById(id);
-});
+      final repository = ref.watch(businessRepositoryProvider);
+      return await repository.getBusinessProfileById(id);
+    });
 
 /// Riverpod provider delivering single business profile by owner's user ID.
 final businessProfileByUserIdProvider =
     FutureProvider.family<BusinessProfileModel?, String>((ref, userId) async {
-  final repository = ref.watch(businessRepositoryProvider);
-  return await repository.getBusinessProfileByUserId(userId);
-});
+      final repository = ref.watch(businessRepositoryProvider);
+      return await repository.getBusinessProfileByUserId(userId);
+    });
 
 /// Riverpod provider delivering public equipment owned by a business user ID.
 final businessOwnerEquipmentProvider =
     FutureProvider.family<List<EquipmentModel>, String>((ref, ownerId) async {
-  final repository = ref.watch(businessRepositoryProvider);
-  return await repository.getEquipmentByOwnerId(ownerId);
-});
+      final repository = ref.watch(businessRepositoryProvider);
+      return await repository.getEquipmentByOwnerId(ownerId);
+    });
 
 class BusinessNotifierState {
   final bool isLoading;
@@ -65,10 +69,14 @@ class BusinessNotifier extends StateNotifier<BusinessNotifierState> {
   final Ref _ref;
 
   BusinessNotifier(this._repository, this._ref)
-      : super(const BusinessNotifierState());
+    : super(const BusinessNotifierState());
 
   Future<bool> updateBusinessProfile(BusinessProfileModel business) async {
-    state = state.copyWith(isLoading: true, errorMessage: null, successMessage: null);
+    state = state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      successMessage: null,
+    );
     try {
       await _repository.upsertBusinessProfile(business);
       state = state.copyWith(
@@ -76,14 +84,13 @@ class BusinessNotifier extends StateNotifier<BusinessNotifierState> {
         successMessage: 'profileUpdatedSuccess',
       );
       _ref.invalidate(currentBusinessProfileProvider);
+      _ref.invalidate(businessProfileDetailProvider(business.id));
+      _ref.invalidate(businessProfileByUserIdProvider(business.userId));
       _ref.invalidate(publicApprovedBusinessProfilesProvider);
       await _ref.read(currentBusinessProfileProvider.future);
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'networkError',
-      );
+      state = state.copyWith(isLoading: false, errorMessage: 'networkError');
       return false;
     }
   }
@@ -91,8 +98,5 @@ class BusinessNotifier extends StateNotifier<BusinessNotifierState> {
 
 final businessNotifierProvider =
     StateNotifierProvider<BusinessNotifier, BusinessNotifierState>((ref) {
-  return BusinessNotifier(
-    ref.watch(businessRepositoryProvider),
-    ref,
-  );
-});
+      return BusinessNotifier(ref.watch(businessRepositoryProvider), ref);
+    });

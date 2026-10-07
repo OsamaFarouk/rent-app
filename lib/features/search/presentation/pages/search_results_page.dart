@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../l10n/app_localizations.dart';
-import '../../../../shared/widgets/app_search_field.dart';
-import '../../../../shared/widgets/category_chip.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../equipment/domain/equipment_model.dart';
-import '../../../equipment/presentation/widgets/equipment_card.dart';
-import '../../../favorites/presentation/providers/favorites_provider.dart';
-import '../../../professionals/presentation/widgets/professional_card.dart';
-import '../../../profile/domain/business_profile_model.dart';
-import '../../../profile/domain/profile_model.dart';
-import '../../../profile/presentation/widgets/rental_house_card.dart';
-
-import '../../data/search_repository.dart';
+import 'package:rent_app/core/constants/app_spacing.dart';
+import 'package:rent_app/core/theme/app_colors.dart';
+import 'package:rent_app/core/theme/app_typography.dart';
+import 'package:rent_app/l10n/app_localizations.dart';
+import 'package:rent_app/shared/widgets/app_search_field.dart';
+import 'package:rent_app/shared/widgets/category_chip.dart';
+import 'package:rent_app/shared/widgets/custom_app_bar.dart';
+import 'package:rent_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:rent_app/features/equipment/domain/equipment_model.dart';
+import 'package:rent_app/features/equipment/presentation/widgets/equipment_card.dart';
+import 'package:rent_app/features/favorites/presentation/providers/favorites_provider.dart';
+import 'package:rent_app/features/professionals/presentation/widgets/professional_card.dart';
+import 'package:rent_app/features/profile/domain/business_profile_model.dart';
+import 'package:rent_app/features/profile/domain/profile_model.dart';
+import 'package:rent_app/features/profile/presentation/widgets/rental_house_card.dart';
+import 'package:rent_app/features/search/data/search_repository.dart';
 
 enum SearchResultType { all, equipment, professionals, rentalHouses }
 
@@ -285,14 +284,16 @@ class _SearchResultsPageState extends ConsumerState<SearchResultsPage> {
 
                             return Padding(
                               padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                              child: EquipmentCard(
-                                isHomeVariant: false,
-                                width: double.infinity,
-                                imagePath: firstImage ?? 'assets/images/sony_fx3.jpg',
-                                title: item.name,
-                                price: priceText,
-                                location: locationText.isNotEmpty ? locationText : l10n.locationMaadi,
-                                isFavorite: isFav,
+                              child: SizedBox(
+                                height: 200,
+                                child: EquipmentCard(
+                                  isHomeVariant: false,
+                                  width: double.infinity,
+                                  imagePath: firstImage ?? 'assets/images/sony_fx3.jpg',
+                                  title: item.name,
+                                  price: priceText,
+                                  location: locationText.isNotEmpty ? locationText : l10n.locationMaadi,
+                                  isFavorite: isFav,
                                 onFavoriteTap: () async {
                                   final user = ref.read(currentUserProvider);
                                   if (user == null) {
@@ -312,8 +313,9 @@ class _SearchResultsPageState extends ConsumerState<SearchResultsPage> {
                                 },
                                 onTap: () => context.push('/equipment/${item.id}'),
                               ),
-                            );
-                          }),
+                            ),
+                          );
+                        }),
                           const SizedBox(height: AppSpacing.md),
                         ],
                       ],
@@ -391,6 +393,7 @@ class _SearchResultsPageState extends ConsumerState<SearchResultsPage> {
                                 area: item.area,
                                 description: item.businessDescription,
                                 logoUrl: item.logoUrl,
+                      coverImageUrl: item.coverImageUrl,
                                 isVerified: true,
                                 isFavorite: isFav,
                                 onFavoriteTap: () async {

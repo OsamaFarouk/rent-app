@@ -64,7 +64,7 @@ void main() {
         _createTestableWidget(
           const RentalHousesPage(),
           overrides: [
-            publicApprovedBusinessProfilesProvider(null).overrideWith((ref) async => [sampleBusiness]),
+            publicApprovedBusinessProfilesProvider(null).overrideWith((ref) => [sampleBusiness]),
           ],
         ),
       );
@@ -75,12 +75,16 @@ void main() {
     });
 
     testWidgets('RentalHouseDetailPage renders details and Equipment section', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
       final sampleEquipment = [
         const EquipmentModel(
           id: 'eq-10',
           ownerId: 'owner-user-1',
           name: 'ARRI Alexa 35',
           dailyPrice: 8000,
+          approvalStatus: 'approved',
         ),
       ];
 
@@ -88,11 +92,13 @@ void main() {
         _createTestableWidget(
           const RentalHouseDetailPage(businessProfileId: 'biz-101'),
           overrides: [
-            businessProfileDetailProvider('biz-101').overrideWith((ref) async => sampleBusiness),
-            businessOwnerEquipmentProvider('owner-user-1').overrideWith((ref) async => sampleEquipment),
+            businessProfileDetailProvider('biz-101').overrideWith((ref) => sampleBusiness),
+            businessOwnerEquipmentProvider('owner-user-1').overrideWith((ref) => sampleEquipment),
           ],
         ),
       );
+      await tester.pump();
+      await tester.pump(Duration.zero);
       await tester.pumpAndSettle();
 
       expect(find.text('Cairo Cine Rental'), findsOneWidget);
